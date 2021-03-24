@@ -2,7 +2,7 @@
 ## Starting Sequence Branch
 In deze branch wordty de startup en callibratie ontwikkeld.
 veel plezier
-### In in uitgangssignalen
+### In en uitgangssignalen
 IN: 
 - encA (digitaal signaal van encoder)
 - encB (digitaal signaal van encoder)    
