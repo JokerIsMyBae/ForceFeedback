@@ -9,8 +9,8 @@
 */
 
 enum PinAssignments {
-    encoderPinA = 1,
-    encoderPinB = 0
+    encoderPinA = 1, //pinA is pin 1 op Teensy
+    encoderPinB = 0  //pinB is pin 0 op Teensy
 };
 
 volatile int encoderPos = 0; // teller voor postitie van het stuur
@@ -27,6 +27,7 @@ void setup()
 {
     Serial.begin(9600);
 
+    //zet pinA en pinB als input
     pinMode(encoderPinA, INPUT); 
     pinMode(encoderPinB, INPUT);
 
@@ -34,8 +35,9 @@ void setup()
     attachInterrupt(digitalPinToInterrupt(encoderPinB), channelB, CHANGE); //zet interrupt op pin 0
 }
 
-void loop() {
-    rotating = true; //reset voor debouncer
+void loop() 
+{
+    rotating = true; //reset naar true voor debouncer
 }
 
 void channelA() 
