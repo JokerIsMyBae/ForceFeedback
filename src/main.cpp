@@ -26,5 +26,5 @@ void loop() {
   digitalWrite(In2, LOW);
   analogWrite(EnA, motorspeed); // turn motor other way
   delay(1000);
-  analogWrite(EnA, 0); // turn of motor
+  analogWrite(EnA, 0); // turn of motor 
 }
