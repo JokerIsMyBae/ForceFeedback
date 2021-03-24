@@ -12,7 +12,8 @@ void setup() {
   pinMode(EnA, OUTPUT);
   pinMode(In1, OUTPUT);
   pinMode(In2, OUTPUT);
-  motorspeed = 250;
+  analogWriteFrequency(EnA,22000);
+  motorspeed = 100;
 }
 
 void loop() {
