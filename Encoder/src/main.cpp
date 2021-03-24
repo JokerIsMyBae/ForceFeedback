@@ -59,6 +59,7 @@ void channelA()
         rotating = false; //niet meer debouncen tot loop opnieuw begint
     }
 } 
+
 //zelfde commentaar als channelA()
 void channelB() 
 {
