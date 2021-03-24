@@ -1,12 +1,11 @@
 #include <Arduino.h>
-#include <iostream>
 
 /*
  Pins:
  Yellow = GND
  Green = Vcc (5v or 3.3V)
- Black = Channel 1
- White = Channel 2
+ Black = Channel 1/A
+ White = Channel 2/B
 */
 
 enum PinAssignments {
@@ -14,65 +13,63 @@ enum PinAssignments {
     encoderPinB = 0
 };
 
-volatile int encoderPos = 0;
-int lastEncoderPos = 1;
-static bool rotating = false;
+volatile int encoderPos = 0; // teller voor postitie van het stuur
+static bool rotating = false; //voor debouncing
 
-bool A_set = false;
-bool B_set = false;
+bool A_set = false;  //staat van pinA (0 of 1)
+bool B_set = false;  //staat van pinB (0 of 1)
 
+//functies uitgevoerd bij interrupts
 void channelA();
 void channelB();
 
-void setup() {
+void setup() 
+{
     Serial.begin(9600);
 
-    pinMode (encoderPinA, INPUT);
-    pinMode (encoderPinB, INPUT);
+    pinMode(encoderPinA, INPUT); 
+    pinMode(encoderPinB, INPUT);
 
-    attachInterrupt(digitalPinToInterrupt(encoderPinA), channelA, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(encoderPinB), channelB, CHANGE);
-
+    attachInterrupt(digitalPinToInterrupt(encoderPinA), channelA, CHANGE); //zet interrupt op pin 1
+    attachInterrupt(digitalPinToInterrupt(encoderPinB), channelB, CHANGE); //zet interrupt op pin 0
 }
 
 void loop() {
-    rotating = true;
+    rotating = true; //reset voor debouncer
 }
 
-void channelA() {
+void channelA() 
+{
     if (rotating)
-        delay (1);
+        delay (1); //wacht tot bounce gedaan is
     
-    if (digitalRead(encoderPinA) != A_set) {
+    // test of er effectief iets veranderd is
+    if (digitalRead(encoderPinA) != A_set) { // nog eens een debounce
         A_set = !A_set;
 
-        if (A_set != B_set) {
+        if (A_set != B_set) { //als a niet gelijk aan b dan loopt a voor op b -> +
             encoderPos++;
-            Serial.println("rechts");
         }
-        else {
-            Serial.println("links");
+        else { //als a gelijk aan b loopt b voor op a -> -
             encoderPos--;
         }
 
-        rotating = false;
+        rotating = false; //niet meer debouncen tot loop opnieuw begint
     }
-
 } 
-
-void channelB() {
+//zelfde commentaar als channelA()
+void channelB() 
+{
     if (rotating)
         delay (1);
 
-    if (digitalRead(encoderPinB) != B_set) {
+    if (digitalRead(encoderPinB) != B_set) { 
         B_set = !B_set;
 
-        if (B_set != A_set) {
-            Serial.println("links");
+        if (B_set != A_set) { //als b niet gelijk aan a dan loopt b voor op a -> -
             encoderPos--;
         }
-        else {
-            Serial.println("rechts");
+        else { //als b gelijk aan a dan loopt a voor op b -> +
             encoderPos++;          
         }
         
