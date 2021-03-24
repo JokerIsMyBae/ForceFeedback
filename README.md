@@ -31,5 +31,7 @@ Dit moet nog geprogrammeerd worden.
 - ofwel a.d.h.v. stroommeting kijken of er tegenkracht wordt geleverd.
 - ofwel kijken of de status van de encoder is verandert t.o.v. vorige check.
 
-
-
+### TO DO
+- isTurning() afmaken.
+- checken of motor naar links/rechts draait bij IN1= HIGH en IN2=LOW.
+- samenvoegen met andere branches
