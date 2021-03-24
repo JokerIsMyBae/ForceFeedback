@@ -10,18 +10,18 @@ void setup() {
   pinMode(EnA, OUTPUT);
   pinMode(In1, OUTPUT);
   pinMode(In2, OUTPUT);
-  motorspeed = 150;
+  motorspeed = 250;
 }
 
 void loop() {
 
-  // turn 1 way
+  // turn 1 way // rechts
   digitalWrite(In1, LOW);
   digitalWrite(In2, HIGH);
   analogWrite(EnA, motorspeed); // turn motor 1 way
   delay(1000);
   analogWrite(EnA, 0); // turn of motor
-  // turn other way
+  // turn other way // links
   digitalWrite(In1, HIGH);
   digitalWrite(In2, LOW);
   analogWrite(EnA, motorspeed); // turn motor other way
