@@ -16,21 +16,30 @@ void setup() {
   pinMode(In2, OUTPUT);
   analogWriteFrequency(EnA,22000);
   motorspeed = 250;
-  Serial.begin(9600);
-  ina219.begin();
+  Serial.begin(115200);
+  while (!Serial){
+    delay(1);
+  }
+  if(!ina219.begin()){
+    Serial.println("failed to find in219");
+    delay(10);
+  }
+ // ina219.setCalibration_32V_1A();
 }
 
 void loop() {
-  float current = 0;
+  float current_mA = 0;
 
   // turn 1 way // rechts
   digitalWrite(In1, LOW);
   digitalWrite(In2, HIGH);
   analogWrite(EnA, motorspeed); // turn motor 1 way
   delay(500);
-  current = ina219.getCurrent_mA();
-  Serial.println(current);
+  current_mA = ina219.getCurrent_mA();
+  Serial.print("current_mA = ");Serial.print(current_mA);
   delay(500);
+  current_mA = ina219.getCurrent_mA();
+  Serial.print("current_mA = ");Serial.print(current_mA);
   analogWrite(EnA, 0); // turn of motor
   // turn other way // links
   digitalWrite(In1, HIGH);
