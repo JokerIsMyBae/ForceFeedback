@@ -112,6 +112,7 @@ void setup() {
   pinMode(motorIn1, OUTPUT);           
   pinMode(motorIn2, OUTPUT);
   motorspeed = 220;
+  analogWriteFrequency(motorEnA,22000);
   //encoder
   /*pinMode(encA, INPUT); 
   pinMode(encB, INPUT);
