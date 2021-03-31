@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include <Wire.h>
+#include <Adafruit_INA219.h>
 
 //De connecties: zie bedradinsschema
   //stroommeter
@@ -8,16 +10,12 @@
 #define motorIn1 3        // In 1 en 2 (digitaal), 1 HIGH en 1 LOW, omdraaien om van richting te veranderen
 #define motorIn2 4        //de motor draait naar rechts bij IN1= LOW, IN2 = HIGH
 int motorspeed = 0;       //overgenomen van thijs, gaat van 0 tot 255
+  
   //encoder
-
-enum PinAssignments {
-    encoderPinA = 1, //pinA is pin 1 op Teensy
-    encoderPinB = 0  //pinB is pin 0 op Teensy
-};
-static bool rotating = false; //voor debouncing
-
-bool A_set = false;  //staat van pinA (0 of 1)
-bool B_set = false;  //staat van pinB (0 of 1)
+#define encA  1           //pinA is pin 1 op Teensy
+#define encB  0           //pinB is pin 0 op Teensy
+bool encAstate = false;   //staat van pinA (0 of 1)
+bool encBstate = false;   //staat van pinB (0 of 1)
 
 //volatile int encA= 0;     // Pin A van encoder (digitaal)
 //volatile int encB= 1;     // pin B van encoder (digitaal) 
@@ -26,6 +24,7 @@ bool B_set = false;  //staat van pinB (0 of 1)
 
 
   //extra variablen
+static bool rotating = false; //voor debouncing
 int rotCounter=9999;         //gaat omhoog naar links, omlaag naar rechts (uiterst rechts is dus 0, uiterst links = maxRot)
 //int rotDirection=0;       // 0 voor kloksgewijs, 1 voor tegen de klok (wordt voorlopig niet gebruikt)
 int maxRot=0;             //voorlopig 0, wordt overschreven na callibratie
@@ -34,18 +33,16 @@ boolean isCalibrated = false;
   //functies
 void channelA() 
 {
-    if (rotating)
-        delay (1); //wacht tot bounce gedaan is
-    
+      
     // test of er effectief iets veranderd is
-    if (digitalRead(encoderPinA) != A_set) { // nog eens een debounce
-        A_set = !A_set;
+    if (digitalRead(encA) != encAstate) { // nog eens een debounce
+        encAstate = !encAstate;
 
-        if (A_set != B_set) { //als a niet gelijk aan b dan loopt a voor op b -> +
-            rotCounter++;
+        if (encAstate != encBstate) { //als a niet gelijk aan b dan loopt a voor op b -> +
+            rotCounter--;
         }
         else { //als a gelijk aan b loopt b voor op a -> -
-            rotCounter--;
+            rotCounter++;
         }
 
         rotating = false; //niet meer debouncen tot loop opnieuw begint
@@ -53,17 +50,14 @@ void channelA()
 } 
 void channelB() 
 {
-    if (rotating)
-        delay (1);
+    if (digitalRead(encB) != encBstate) { 
+        encBstate = !encBstate;
 
-    if (digitalRead(encoderPinB) != B_set) { 
-        B_set = !B_set;
-
-        if (B_set != A_set) { //als b niet gelijk aan a dan loopt b voor op a -> -
-            encoderPos--;
+        if (encBstate != encAstate) { //als b niet gelijk aan a dan loopt b voor op a -> -
+            rotCounter++;
         }
         else { //als b gelijk aan a dan loopt a voor op b -> +
-            encoderPos++;          
+            rotCounter--;          
         }
         
         rotating = false;
@@ -108,7 +102,7 @@ boolean isTurning()
 
  void calibrate()
  {
-    //callibratie
+    //calibratie
     Serial.println("Begin Calibratie");
     Serial.println("Draai naar rechts... ");
     digitalWrite(motorIn1, LOW);        //laat de motor naar rechts draaien tot het stuur niet meer beweegt
@@ -141,7 +135,7 @@ boolean isTurning()
  }
 void setup() {
   Serial.begin(9600);//seriele monitor
-  Serial.printf("Begin declaratie /n");
+  Serial.println("Begin declaratie");
   //declarenen van in/uitgangen
   //H brug
   pinMode(motorEnA, OUTPUT);
@@ -149,10 +143,10 @@ void setup() {
   pinMode(motorIn2, OUTPUT);
   motorspeed = 220;
   //encoder
-  pinMode(encoderPinA, INPUT); 
-  pinMode(encoderPinB, INPUT);
-  attachInterrupt(digitalPinToInterrupt(encoderPinA), channelA, CHANGE); //zet interrupt op pin 1
-  attachInterrupt(digitalPinToInterrupt(encoderPinB), channelB, CHANGE); //zet interrupt op pin 0
+  pinMode(encA, INPUT); 
+  pinMode(encB, INPUT);
+  attachInterrupt(digitalPinToInterrupt(encA), channelA, CHANGE); //zet interrupt op pin 1
+  attachInterrupt(digitalPinToInterrupt(encB), channelB, CHANGE); //zet interrupt op pin 0
   //pinMode(encA,INPUT);
   //pinMode(encB,INPUT);
   //als encA verandert (CHANGE), wordt de functie updateEncoder() uitgevoerd
@@ -162,9 +156,10 @@ void setup() {
 }
 
 void loop() {
-  rotating = true; //reset naar true voor debouncer
+  
   if (!isCalibrated)
   {
+    Serial.println("isCalibrated = false ");
     calibrate();
     Serial.println("gedaan met de pret");
   }
