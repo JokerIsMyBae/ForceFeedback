@@ -11,7 +11,7 @@ void setup() {
   Serial.begin(9600);
 }
 
-long position  = 9999;
+long position  = 999;
 
 void loop() {
   long newLeft;
