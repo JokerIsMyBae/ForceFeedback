@@ -15,19 +15,7 @@ int motorspeed = 0;         //gaat van 0 tot 255
   //encoder --> dit is een hardwareteller die de rotatie bijhoudt t.o.v. de positie die hij had bij activatie
 Encoder rotEncoder(0, 1);   //de encoder telt op naar rechts 
 
-//#define encA  1           //pinA is pin 1 op Teensy
-//#define encB  0           //pinB is pin 0 op Teensy
-//bool encAstate = false;   //staat van pinA (0 of 1)
-//bool encBstate = false;   //staat van pinB (0 of 1)
-
-//volatile int encA= 0;     // Pin A van encoder (digitaal)
-//volatile int encB= 1;     // pin B van encoder (digitaal) 
-//int encAstate=LOW;        //huidige staat van A
-//int encAlastState =encAstate; // laatst gelezen staat van A 
-
-
   //extra variablen
-//static bool rotating = false; //voor debouncing
 int rotCount=9999;          //gaat omhoog naar links, omlaag naar rechts (uiterst rechts is dus 0, uiterst links = maxRot)
 int maxRot=0;               //voorlopig 0, wordt overschreven na callibratie
 int tempRotCount=0;
@@ -37,9 +25,8 @@ boolean isCalibrated = false;
 //functies
 void updateEncoder()
 {
-  rotCount=-1*(rotEncoder.read()-rotOffset);
+  rotCount=-1*(rotEncoder.read()-rotOffset); //update de rotCount, houdt rekening met beginpositie van encoder-decoder
 }
-
 
 boolean isTurning()       
 {
@@ -71,77 +58,36 @@ void calibrate()
   analogWrite(motorEnA, motorspeed);
   delay(20);
   while( isTurning() );               //zolang encoder zegt dat het stuur draait 
-  {
-    //delay(200);                        //om de 100 milliseconden checken
+  {                                   //isTurning wordt alleen hier gebruikt, roept zelf een delay op
   }
   analogWrite(motorEnA, 0);           //stuur draait niet meer verder: stop de motor
   Serial.println("Uiterst rechts bereikt, stop de motor ");
-  updateEncoder();
+  updateEncoder();                    //offset is hier nog 0, de functie zal dus alleen het verschil met de beginpositie geven
   Serial.printf( "De encoder geeft nu als rotatie %d = de rotOffset",rotCount);
-  Serial.println("");// een enter want \n werkt precies niet
+  Serial.println("");                 //een enter want \n werkt precies niet
   rotOffset=rotEncoder.read(); 
-  updateEncoder();
+  updateEncoder();                    //nu de offset is ingesteld zou het correct (0) moeten zijn
   Serial.printf("Na instellen van offset is onze rotCounter= %d (zou 0 moeten zijn) ",rotCount);
-  Serial.println("");// een enter want \n werkt precies niet
+  Serial.println("");                 // een enter want \n werkt precies niet
   Serial.println("Draai naar links...");  
- // rotCount=0;                       //uiterst rechts is het nulpunt
-  //laat de motor naar links draaien tot het stuur niet meer beweegt en tel ondertussen de ticks van de encoder
+   //laat de motor naar links draaien tot het stuur niet meer beweegt en tel ondertussen de ticks van de encoder
   digitalWrite(motorIn1, HIGH);       //In1 en 2 worden omgedraaid HIGH <-> LOW
   digitalWrite(motorIn2, LOW);
   analogWrite(motorEnA, motorspeed); 
   delay(20);
   while( isTurning() );               //zolang encoder zegt dat het stuur draait 
   {
-    //delay(200);                        //om de 100 milliseconden checken
   }
   analogWrite(motorEnA, 0);           //stop de motor
-  maxRot=rotCount;                  //uiterst links = max rotatia
+  maxRot=rotCount;                    //uiterst links = max rotatie
   //nu de maxRotatie gekend is, weten we dat het midden bereikt is als rotCount= maxRot/2
   Serial.printf("Uiterst links bereikt, maxRot = %d ",maxRot);
   Serial.println(" callibratie beeindigd");
   isCalibrated = true;
 }
-void setup() {
-  Serial.begin(9600);//seriele monitor
-  Serial.println("Begin declaratie");
-  //declarenen van in/uitgangen
-  //H brug
-  pinMode(motorEnA, OUTPUT);
-  pinMode(motorIn1, OUTPUT);           
-  pinMode(motorIn2, OUTPUT);
-  motorspeed = 220;
-  analogWriteFrequency(motorEnA,22000);
-  //encoder
-  /*pinMode(encA, INPUT); 
-  pinMode(encB, INPUT);
-  attachInterrupt(digitalPinToInterrupt(encA), channelA, CHANGE); //zet interrupt op pin 1
-  attachInterrupt(digitalPinToInterrupt(encB), channelB, CHANGE); //zet interrupt op pin 0
-  */
-  //pinMode(encA,INPUT);
-  //pinMode(encB,INPUT);
-  //als encA verandert (CHANGE), wordt de functie updateEncoder() uitgevoerd
-  //attachInterrupt(digitalPinToInterrupt(encA),updateEncoder,CHANGE);  
-}
 
-void loop() {
-  
-  if (!isCalibrated)
-  {
-    Serial.println("isCalibrated = false ");
-    calibrate();
-    Serial.println("gedaan met de pret");
-  }
-
-  /*int i=0;
-  Serial.println("Test");
-  for (i < 4)
-  {
-    Serial.println("zet het stuur manueel in een positie.");
-    delay(5000);
-    Serial.println("De hoek is %d graden",(rotCount/maxRot)*450);
-    delay(2000);
-    i++;
-  }*/
+void testRotCount()
+{
   int i;
   Serial.println("Test");
   for (i=0; i < 4; i++)
@@ -153,5 +99,34 @@ void loop() {
     Serial.println(hoek);
     delay(2000);
   }
+}
+
+void setup() {
+  Serial.begin(9600);//seriele monitor
+  Serial.println("Begin declaratie");
+  //declarenen van in/uitgangen
+  //stroommeter
+
+  //H brug
+  pinMode(motorEnA, OUTPUT);
+  pinMode(motorIn1, OUTPUT);           
+  pinMode(motorIn2, OUTPUT);
+  motorspeed = 220;
+  analogWriteFrequency(motorEnA,22000);    //freq aangepast om gepiep te vermijden
+  //encoder
+}
+
+void loop() {
   
+  if (!isCalibrated)
+  {
+    Serial.println("isCalibrated = false ");
+    calibrate();
+  }
+  if (isCalibrated)
+  {
+    Serial.println("isCalibrated = true, gedaan met de pret");
+  }
+  testRotCount();
+  Serial.println("The end.");
   }
