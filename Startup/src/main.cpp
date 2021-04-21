@@ -58,10 +58,8 @@ boolean isTurning()
     tempRotCount= rotCount;
     delay(200); 
     return false;           //het stuur draait niet meer
-  }
-  
+  }  
 }
-
 
 void calibrate()
 {
@@ -140,9 +138,20 @@ void loop() {
   {
     Serial.println("zet het stuur manueel in een positie.");
     delay(5000);
-    Serial.println("De hoek is %d graden",(rotCount/maxCount)*450);
+    Serial.println("De hoek is %d graden",(rotCount/maxRot)*450);
     delay(2000);
-    i++
+    i++;
   }*/
+  int i;
+  Serial.println("Test");
+  for (i=0; i < 4; i++)
+  {
+    Serial.println("zet het stuur manueel in een positie.");
+    delay(5000);
+    rotCount=-1*(rotEncoder.read()-rotOffset);
+    float hoek = float(rotCount)/maxRot * 900;
+    Serial.println(hoek);
+    delay(2000);
+  }
   
   }
