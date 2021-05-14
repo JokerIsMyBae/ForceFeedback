@@ -56,10 +56,10 @@ int rotOffset=0;            //de positie waarin de encoder de 1ste keer wordt ge
 boolean isCalibrated = false;
 
 //functies
-//functies voor calibratie
 void updateEncoder()        //update de rotCount, houdt rekening met beginpositie van encoder-decoder
 {
   rotCount=-1*(rotEncoder.read()-rotOffset); 
+  angle= (-1)*(float(rotCount)/maxRot * 900)+450; //rare bereking, het werkt
 }
 
 boolean isTurning()   //gebruikt bij calibratie, werkt met encoder, niet met stroom    
@@ -130,11 +130,11 @@ void testRotCount()   //om de graden manueel te testen
   for (i=0; i < 4; i++)
   {
     Serial.println("zet het stuur manueel in een positie.");
-    delay(5000);
+    delay(3000);
     rotCount=-1*(rotEncoder.read()-rotOffset);
-    float hoek = float(rotCount)/maxRot * 900;
-    Serial.println(hoek);
-    delay(2000);
+    float absAngle = float(rotCount)/maxRot * 900;
+    Serial.printf("absolute hoek van uiterst rechts is= %f en hoek t.o.v. het midden is %f",absAngle, angle);
+    delay(500);
   }
 }
 
@@ -155,11 +155,8 @@ void updateMotor()
   analogWrite(motorEnA, motorspeed);
 }
 
-//functies voor centreren
 double calcSetPoint(float angle) //berekent kracht voor huidige hoekafwijking
 {
-  updateEncoder();
-  angle= (-1)*(float(rotCount)/maxRot * 900)+450; //rare bereking, het werkt
   double force= angle*scalar;                     //de kracht is evenredig met de hoekafwijking en wordt groter/kleiner met de snelheid vd auto (scalar)
   Serial.printf("angle= %f",angle);
   return force;
@@ -196,8 +193,7 @@ double calcPID(double input)//input is stroom, output is motorspeed=voltage
 
 void timerCallback()
 {
-  //Serial.println("timercallback");
-/* This function is called when a timer has passed */
+  updateEncoder();
   if (!testModus)//normale modus
   {
       setPoint=calcSetPoint(angle);               //de hoek wordt geupdate, hoe groter de hoek hoe groter de kracht
@@ -206,9 +202,8 @@ void timerCallback()
   motorspeed=calcPID(current_mA);
   if (testModus)
   {
-      Serial.printf("current = %f \n",current_mA);
+      Serial.printf(" current = %f \n hoek= %f \n motorspeed= %d \n",current_mA,angle,motorspeed);
   }
-  Serial.println(motorspeed);
   updateMotor();
 }
 
@@ -230,10 +225,13 @@ void readInput()
         if (temp >=0 and temp<6)                  //min en max voor scalair
         {
           scalar=temp;                            //terug naar menu
+          Serial.printf("de nieuwe scalar is: %f \n",scalar);
+          delay(500);
           menu();
         }
         else{                                     //ongeldige input
           Serial.println("De kracht scalair moet tussen 0 en 5 zijn");
+          delay(500);
           menu();                                 //terug naar menu
         }
         break;
@@ -244,24 +242,9 @@ void readInput()
         break;
 
     case 3:
-        Serial.println("U koos: 2");
+        Serial.println("U koos: 3");
         testRotCount();
         menu();
-        //de volgende code is van een andere feature
-        /*Serial.println("Geef de nieuwe setPoint in (tussen 0 en 255): ");
-        while (Serial.available() == 0) {
-        // Wait for User to Input Data
-        }
-        temp = Serial.parseInt(); //Read the data the user has input
-        if (temp >=0 and temp<256)//min en max voor scalair
-        {
-          setPoint=temp;
-          menu();
-        }
-        else{
-          Serial.println("De setPoint moet tussen 0 en 255 zijn");
-          menu(); //terug naar menu
-        }*/
         break;
 
     case 4:
@@ -273,6 +256,7 @@ void readInput()
 
     default:
         Serial.println("Gelieve een geldig getal in te geven");
+        delay(500);
         menu();
   }
 }
@@ -286,8 +270,6 @@ void menu()//extra feature
   Serial.println("4: testmodus met vaste setpoint=150");  
   readInput();
 }
-
-
 
 void setup() {
   Serial.begin(9600);//seriele monitor
