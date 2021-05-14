@@ -25,8 +25,10 @@ int motorspeed = 0;         //gaat van 0 tot 255
 Encoder rotEncoder(0, 1);   //de encoder telt op naar rechts 
 
 //de timer
-#define TICK_ACTION 1
-StensTimer* stensTimer = NULL;
+// Create an IntervalTimer object 
+IntervalTimer myTimer;
+//#define TICK_ACTION 1
+//StensTimer* stensTimer = NULL;
 //int counter = 0;
 
 //PID contstanten
@@ -84,13 +86,13 @@ boolean isTurning()   //gebruikt bij calibratie, werkt met encoder, niet met str
 void calibrate()
 {
   //calibratie
-  motorspeed=200;
+  motorspeed=150;
   Serial.println("Begin Calibratie");
   Serial.println("Draai naar rechts... ");
   digitalWrite(motorIn1, LOW);        //laat de motor naar rechts draaien tot het stuur niet meer beweegt
   digitalWrite(motorIn2, HIGH); 
   analogWrite(motorEnA, motorspeed);
-  delay(20);
+  delay(100);
   while( isTurning() );               //zolang encoder zegt dat het stuur draait 
   {                                   //isTurning wordt alleen hier gebruikt, roept zelf een delay op
   }
@@ -155,7 +157,10 @@ void updateMotor()
 //functies voor centreren
 double calcSetPoint(float angle) //berekent kracht voor huidige hoekafwijking
 {
+  updateEncoder();
+  angle= (-1)*(float(rotCount)/maxRot * 900)+450;
   double force= angle*scalar;//de kracht is evenredig met de hoekafwijking en wordt groter/kleiner met de snelheid vd auto (scalar)
+  Serial.printf("angle= %f",angle);
   return force;
 }
 
@@ -188,9 +193,9 @@ double calcPID(double input)//input is stroom, output is motorspeed=voltage
   return output;
 }
 
-void timerCallback(Timer* timer)
+void timerCallback()
 {
-  Serial.println("timercallback");
+  //Serial.println("timercallback");
 /* This function is called when a timer has passed */
   if (!testModus)//normale modus
   {
@@ -202,10 +207,13 @@ void timerCallback(Timer* timer)
   {
       Serial.printf("current = %f \n",current_mA);
   }
+  Serial.println(motorspeed);
+  updateMotor();
 }
 
 void readInput()
 {
+  testModus=false;
   int keuze=0;
   double temp=0;
    while (Serial.available() == 0) {
@@ -234,6 +242,7 @@ void readInput()
 
     case 2://centreren
         //PID code
+        myTimer.begin(timerCallback, 150000); //0.15 sec
         break;
 
     case 3:
@@ -256,7 +265,9 @@ void readInput()
     case 4:
         Serial.println("Optie 4: ");
         testModus=true;
-        stensTimer->run(); //om pid te runnen
+        setPoint=150;
+        myTimer.begin(timerCallback, 150000); //0.15 sec
+        //stensTimer->run(); //om pid te runnen
         break;
     default:
         Serial.println("Gelieve een geldig getal in te geven");
@@ -297,11 +308,8 @@ void setup() {
   analogWriteFrequency(motorEnA,22000);    //freq aangepast om gepiep te vermijden
   //timers
   setPoint=0;
-  /* Save instance of StensTimer to the tensTimer variable*/ //komt rechtstreeks uit library
-  stensTimer = StensTimer::getInstance();
-  /* Tell StensTimer which callback function to use */
-  stensTimer->setStaticCallback(timerCallback);
-  /*Timer* stensTimer =*/ stensTimer->setInterval(TICK_ACTION, 10);//10 milisec 
+  
+  
 }
 
 void loop() {
@@ -312,11 +320,13 @@ void loop() {
     if (isCalibrated)
     {
     Serial.println("isCalibrated = true, gedaan met de pret");
-    //menu();
+    //testRotCount();
+    menu();
+    
     }
   }
 
-  highLow=true;
+  /*highLow=true;
     motorspeed =200;
     updateMotor();
     delay(1000);
@@ -331,8 +341,8 @@ void loop() {
     Serial.println(ina219.getCurrent_mA());
     motorspeed=0;
     updateMotor();
-    Serial.println("Looping!");
-  //testRotCount();
+    Serial.println("Looping!");*/
+  
   //stensTimer->run(); om pid te runnen
 
 
