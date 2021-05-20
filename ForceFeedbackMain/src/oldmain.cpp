@@ -32,7 +32,7 @@ IntervalTimer myTimer;      //IntervalTimer object
 
 //extra variablen
 double angle = 0;           //t.o.v. het middelpunt (waar rotCounter = 450)
-double scalar= 1.5;            // een constante om de kracht te tunen
+double scalar=1;            // een constante om de kracht te tunen
 bool highLow=true;          //om de polariteit van de motor te bepalen (slechte naam maar het werkt)
 bool testModus = false; 
 //PID:
@@ -45,7 +45,7 @@ double setPoint=0;
 double sumError, rateError; //integral en derivative (derivative wordt voorlopig niet gebruikt maar kan in theorie wel)
 //PID contstanten
 double kp=1;
-double ki=0.2;                //0.45*kp volgens ziegler-nicholas methode
+double ki=0;                //0.45*kp volgens ziegler-nicholas methode
 double kd=0;                //0.8*kp/tp
 
 //calibratie
@@ -54,16 +54,12 @@ int maxRot=0;               //voorlopig 0, wordt overschreven na callibratie
 int prevRotCount=0;
 int rotOffset=0;            //de positie waarin de encoder de 1ste keer wordt gelezen zal hij als pos 0 beschouwen, is niet gelijk aan startpunt
 boolean isCalibrated = false;
-int timerInterval = 100000;
-
-int maxSpeed = 150;
-int minSpeed = 70;
 
 //functies
 void updateEncoder()        //update de rotCount, houdt rekening met beginpositie van encoder-decoder
 {
-  rotCount=(-1)*(rotEncoder.read()-rotOffset); 
-  angle= (-1)*(float(rotCount)/maxRot * 900)+450; //rare berekening, het werkt
+  rotCount=-1*(rotEncoder.read()-rotOffset); 
+  angle= (-1)*(float(rotCount)/maxRot * 900)+450; //rare bereking, het werkt
 }
 
 boolean isTurning()   //gebruikt bij calibratie, werkt met encoder, niet met stroom    
@@ -162,7 +158,7 @@ void updateMotor()
 double calcSetPoint(float angle) //berekent kracht voor huidige hoekafwijking
 {
   double force= angle*scalar;                     //de kracht is evenredig met de hoekafwijking en wordt groter/kleiner met de snelheid vd auto (scalar)
-  Serial.printf("angle=%.2f\n",angle);
+  Serial.printf("angle= %f",angle);
   return force;
 }
 
@@ -175,10 +171,12 @@ double calcPID(double input)//input is stroom, output is motorspeed=voltage
   error = setPoint-current255;
   sumError += error*elapsedTime;
 
-  int maxSumError=5;
-  if(sumError > maxSumError){
+  int maxSumError=50;
+  if(sumError > maxSumError)
+  {
     sumError=maxSumError;
-  }else if(sumError<(-1)*maxSumError){
+  }else if (sumError<(-1)*maxSumError)
+  {
     sumError=(-1)*maxSumError;
   }
 
@@ -188,17 +186,18 @@ double calcPID(double input)//input is stroom, output is motorspeed=voltage
 
   lastError= error;
   previousTime=currentTime;
-  
-  highLow = output < 0 ? false : true;
-  output = abs(output);
 
-  if(output>maxSpeed){
-    output=maxSpeed;
+  if (output>255)                                  //max motorspeed = 255
+  {
+    output=255;
+  }else if(output<0)                               //motorspeed is positief, IN1,IN2 van hbrug bepalen polen van motor
+  {                                                //als output negatief is betekent dit dat de motor naar links wil draaien
+    highLow=false;    
+    output=abs(output);
+  }else
+  {
+    highLow=true;                                  //motor draait naar rechts
   }
-  else if(output<minSpeed){
-    output=minSpeed;
-  }
-  
   return output;
 }
 
@@ -225,7 +224,7 @@ void readInput()
   double temp=0;
   while (Serial.available() == 0) { }             // Wait for User to Input Data   
   keuze = Serial.parseInt();                      //Read the data the user has input (1 charachter)
-
+  
   switch (keuze)  
   {
     case 1:
@@ -249,7 +248,7 @@ void readInput()
 
     case 2://centreren
         Serial.println("U koos: 2");
-        myTimer.begin(timerCallback, timerInterval);     //in µ-sec
+        myTimer.begin(timerCallback, 150000);     //in µ-sec
         break;
 
     case 3:
@@ -262,7 +261,7 @@ void readInput()
         Serial.println("Optie 4: ");
         testModus=true;
         setPoint=150;
-        myTimer.begin(timerCallback, timerInterval); //in µ-sec
+        myTimer.begin(timerCallback, 150000); //in µ-sec
         break;
 
     default:
